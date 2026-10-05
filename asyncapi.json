@@ -22,6 +22,8 @@ channels:
   hello:
     address: hello
     description: Channel where greetings are published.
+    tags:
+      - name: Greetings
     messages:
       helloMessage:
         $ref: '#/components/messages/HelloMessage'
