@@ -1,11 +1,11 @@
-asyncapi: 3.1.0
+asyncapi: 3.0.0
 
 info:
   title: Hello World Application
   version: 1.0.0
   description: |
     A minimal example application that sends and receives "hello" greetings
-    over a message broker.
+    over a WebSocket connection.
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
@@ -14,9 +14,9 @@ defaultContentType: application/json
 
 servers:
   development:
-    host: localhost:1883
-    protocol: mqtt
-    description: Local MQTT broker for development.
+    host: localhost:8080
+    protocol: ws
+    description: Local WebSocket server for development.
 
 channels:
   hello:
