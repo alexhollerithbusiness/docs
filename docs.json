@@ -95,12 +95,6 @@
     "playground": {
       "display": "none",
       "proxy": false
-    },
-    "asyncapi": [
-      "commands.asyncapi.yaml",
-      "match-dictionary.asyncapi.yaml",
-      "available-matches.asyncapi.yaml",
-      "odds.asyncapi.yaml"
-    ]
+    }
   }
 }
