@@ -22,19 +22,19 @@
         "pages": [
           {
             "group": "Odds",
-            "asyncapi": "/asyncapi/odds.asyncapi.yaml"
+            "asyncapi": "/odds.asyncapi.yaml"
           },
           {
             "group": "Available matches",
-            "asyncapi": "/asyncapi/available-matches.asyncapi.yaml"
+            "asyncapi": "/available-matches.asyncapi.yaml"
           },
           {
             "group": "Match dictionary",
-            "asyncapi": "/asyncapi/match-dictionary.asyncapi.yaml"
+            "asyncapi": "/match-dictionary.asyncapi.yaml"
           },
           {
             "group": "Commands",
-            "asyncapi": "/asyncapi/commands.asyncapi.yaml"
+            "asyncapi": "/commands.asyncapi.yaml"
           }
         ]
       }
