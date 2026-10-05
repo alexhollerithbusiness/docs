@@ -1,0 +1,270 @@
+asyncapi: 3.0.0
+info:
+  title: Kairos Odds
+  version: 1.0.0
+  description: |-
+    Ask Kairos to price a bet card. Every query that is understood is answered exactly once, with a signed offer or the reason there is none.
+
+    Generated from the `com.jacktime.strykr` .proto files by `generate_asyncapi.py`; edit the .proto files or the script rather than this file.
+defaultContentType: application/json
+servers:
+  production:
+    host: api.example.com
+    protocol: wss
+    description: 'TODO: replace the placeholder host with the real Kairos WebSocket endpoint.'
+channels:
+  odds:
+    address: /odds
+    title: Odds
+    description: Send an `OddsQuery`, receive one `OddsQueryResult` per query.
+    tags:
+    - name: Odds
+    messages:
+      oddsQuery:
+        $ref: '#/components/messages/OddsQuery'
+      oddsQueryResult:
+        $ref: '#/components/messages/OddsQueryResult'
+operations:
+  receiveOdds:
+    action: receive
+    summary: Messages a client sends on odds.
+    channel:
+      $ref: '#/channels/odds'
+    messages:
+    - $ref: '#/channels/odds/messages/oddsQuery'
+  sendOdds:
+    action: send
+    summary: Messages Kairos sends on odds.
+    channel:
+      $ref: '#/channels/odds'
+    messages:
+    - $ref: '#/channels/odds/messages/oddsQueryResult'
+components:
+  messages:
+    OddsQuery:
+      name: OddsQuery
+      title: Odds query
+      summary: A bet card to be priced.
+      payload:
+        type: object
+        description: What a widget asks the odds compiler for. One thing is asked today, a bet card to be priced, and it is
+          wrapped in a oneof so that a second kind of question does not need a second endpoint or a second reply type.
+        properties:
+          bet_card:
+            type: object
+            properties:
+              match_selections:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    match_id:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                    current_match_score:
+                      type: object
+                      properties:
+                        home:
+                          type: integer
+                          description: Omitted when it is 0.
+                          format: uint32
+                          minimum: 0
+                          default: 0
+                        away:
+                          type: integer
+                          description: Omitted when it is 0.
+                          format: uint32
+                          minimum: 0
+                          default: 0
+              bet_win_terms:
+                type: object
+                description: What has to happen for a bet to win, which is a rise in score inside a stretch of time.
+                properties:
+                  score_change:
+                    type: integer
+                    description: How many goals the score has to rise by, counted from the score the card was built against.
+                    format: uint32
+                    minimum: 0
+                  bet_duration:
+                    type: object
+                    description: How long the rise has to happen in.
+                    properties:
+                      minutes:
+                        type: integer
+                        format: uint32
+                        minimum: 0
+        required:
+        - bet_card
+      examples:
+      - name: Price a bet card
+        payload:
+          bet_card:
+            match_selections:
+            - match_id:
+                id: match-123
+              current_match_score:
+                home: 1
+                away: 0
+            bet_win_terms:
+              score_change: 1
+              bet_duration:
+                minutes: 10
+    OddsQueryResult:
+      name: OddsQueryResult
+      title: Odds query result
+      summary: The signed offer, or why there is none.
+      payload:
+        type: object
+        description: |-
+          What the odds compiler answers a query with: the priced offer, or why there is none. Exactly one of the two, since a query that was priced has no failure to report and one that was not has no offer to carry.
+
+          The offer is signed, because it leaves Kairos and comes back later with a bet, and what comes back has to be the offer that went out. Odds are checked again at placement, but that check allows the odds to have moved since, so on its own it would let a changed number through as a moved market.
+
+          The signature travels beside the offer rather than inside it, so the offer stays a plain business record. Pass the whole thing back with the bet.
+        properties:
+          signed_bet_offer:
+            type: object
+            description: An offer together with the signature over it. The signature travels beside the offer rather than
+              inside it, so the offer stays a plain business record. Exactly one of `signed_bet_offer`, `failure` is set.
+            properties:
+              bet_offer:
+                type: object
+                properties:
+                  bet_card:
+                    type: object
+                    properties:
+                      match_selections:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            match_id:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                            current_match_score:
+                              type: object
+                              properties:
+                                home:
+                                  type: integer
+                                  description: Omitted when it is 0.
+                                  format: uint32
+                                  minimum: 0
+                                  default: 0
+                                away:
+                                  type: integer
+                                  description: Omitted when it is 0.
+                                  format: uint32
+                                  minimum: 0
+                                  default: 0
+                      bet_win_terms:
+                        type: object
+                        description: What has to happen for a bet to win, which is a rise in score inside a stretch of time.
+                        properties:
+                          score_change:
+                            type: integer
+                            description: How many goals the score has to rise by, counted from the score the card was built
+                              against.
+                            format: uint32
+                            minimum: 0
+                          bet_duration:
+                            type: object
+                            description: How long the rise has to happen in.
+                            properties:
+                              minutes:
+                                type: integer
+                                format: uint32
+                                minimum: 0
+                  odds:
+                    type: object
+                    properties:
+                      decimal_odds:
+                        type: object
+                        description: An exact decimal value, written as a string so that it reads the same in every locale.
+                          The decimal separator is a full stop and there are no thousands separators. The scale is in the
+                          string itself, so "10.50", "0.00100000" and "6.1" each carry their own.
+                        properties:
+                          value:
+                            type: string
+              signature:
+                type: object
+                properties:
+                  key_id:
+                    type: string
+                  signature:
+                    type: string
+          failure:
+            type: object
+            description: |-
+              Why a query that was understood got no odds. Every such query is answered exactly once, so this arrives in place of the offer a priced one would have carried.
+
+              A query that could not be read at all, and a failure of the service itself, are not in here: those are answered by the transport rather than by a code, so nothing here is about how a request was framed or about Kairos being unwell.
+
+              The codes say what happened to the query rather than which rule decided it. Some of them are about one of the card's selections and name it, and the rest are about the card as a whole and name nothing, which is what decides whether the match id is there. The ones about a selection are listed in the order they are decided in, and the first thing wrong with a card is what the card is answered with. Exactly one of `signed_bet_offer`, `failure` is set.
+            properties:
+              code:
+                type: string
+                description: |-
+                  Why there is no offer.
+
+                  - `UNMAPPED`: A code this library does not know, sent by a newer version of the service. It is never sent deliberately: treat it as an unclassified failure, and upgrade to be able to interpret it.
+                  - `MATCH_NOT_FOUND`: A selected match is not held. Nothing has been reported about it, or it ended or was abandoned and stopped being kept, and those are one code because a match that concluded is gone from here either way. Names the match.
+                  - `MATCH_NOT_STARTED`: A selected match has not started, so there is no play for a bet to run in. Names the match.
+                  - `MATCH_IN_BREAK`: A selected match is paused between periods, such as at halftime or before overtime. Names the match.
+                  - `MATCH_IN_SHOOTOUT`: A selected match is being decided by a shootout, which runs to no clock and has no end time, so a timer cannot be fitted inside it. Names the match.
+                  - `MATCH_SUSPENDED`: Play in a selected match has been stopped without the period having ended. Names the match.
+                  - `PRICING_UNAVAILABLE`: A selected match is being played and there is nothing to price it from. Names the match.
+                  - `SCORE_CHANGED`: The score stated for a selected match is not the score that match stands at. What the player was looking at when they built the card is out of date, so the card has to be built again against the score it now has. Names the match.
+                  - `INSUFFICIENT_TIME_REMAINING`: A selected match's period ends too soon for the timer the card asks for. A shorter timer may still be priced, and the same timer will not be priced on that match again. Names the match.
+                  - `ODDS_UNAVAILABLE`: The card was priced and the odds it came out at are not odds Kairos sells. This is about the card as a whole, since its odds are, so it names no match. Another card over the same matches may well be priced.
+                enum:
+                - UNMAPPED
+                - MATCH_NOT_FOUND
+                - MATCH_NOT_STARTED
+                - MATCH_IN_BREAK
+                - MATCH_IN_SHOOTOUT
+                - MATCH_SUSPENDED
+                - PRICING_UNAVAILABLE
+                - SCORE_CHANGED
+                - INSUFFICIENT_TIME_REMAINING
+                - ODDS_UNAVAILABLE
+              match_id:
+                type: object
+                description: Which of the card's selections this is about, for a widget that wants to point at the one that
+                  failed. Absent where the failure is about the whole card rather than one match.
+                properties:
+                  id:
+                    type: string
+        minProperties: 1
+        maxProperties: 1
+      examples:
+      - name: Priced
+        payload:
+          signed_bet_offer:
+            bet_offer:
+              bet_card:
+                match_selections:
+                - match_id:
+                    id: match-123
+                  current_match_score:
+                    home: 1
+                    away: 0
+                bet_win_terms:
+                  score_change: 1
+                  bet_duration:
+                    minutes: 10
+              odds:
+                decimal_odds:
+                  value: '4.50'
+            signature:
+              key_id: key-2026-10
+              signature: MEUCIQDx4mVq1t0...base64...
+      - name: Not priced
+        payload:
+          failure:
+            code: SCORE_CHANGED
+            match_id:
+              id: match-123

@@ -1,0 +1,151 @@
+asyncapi: 3.0.0
+info:
+  title: Kairos Match Dictionary
+  version: 1.0.0
+  description: |-
+    A stream of what each match Kairos follows is displayed as. The complete dictionary is sent when the stream opens, then each change on its own.
+
+    Generated from the `com.jacktime.strykr` .proto files by `generate_asyncapi.py`; edit the .proto files or the script rather than this file.
+defaultContentType: application/json
+servers:
+  production:
+    host: api.example.com
+    protocol: wss
+    description: 'TODO: replace the placeholder host with the real Kairos WebSocket endpoint.'
+channels:
+  matchDictionary:
+    address: /matches/dictionary
+    title: Match dictionary
+    description: 'Sent by Kairos: a snapshot first, then single entries and removals.'
+    tags:
+    - name: Matches
+    messages:
+      matchDictionary:
+        $ref: '#/components/messages/MatchDictionary'
+      matchDictionaryEntry:
+        $ref: '#/components/messages/MatchDictionaryEntry'
+      matchDictionaryEntryRemoved:
+        $ref: '#/components/messages/MatchDictionaryEntryRemoved'
+operations:
+  sendMatchDictionary:
+    action: send
+    summary: Messages Kairos sends on match dictionary.
+    channel:
+      $ref: '#/channels/matchDictionary'
+    messages:
+    - $ref: '#/channels/matchDictionary/messages/matchDictionary'
+    - $ref: '#/channels/matchDictionary/messages/matchDictionaryEntry'
+    - $ref: '#/channels/matchDictionary/messages/matchDictionaryEntryRemoved'
+components:
+  messages:
+    MatchDictionary:
+      name: MatchDictionary
+      title: Snapshot
+      summary: The complete dictionary, sent when the stream opens.
+      payload:
+        type: object
+        description: The complete dictionary, sent when a stream opens. Each change after that is sent on its own, as one
+          entry or as the id of an entry that was removed.
+        properties:
+          entries:
+            type: array
+            description: One entry per match Kairos is following, in no particular order.
+            items:
+              type: object
+              properties:
+                match_id:
+                  type: object
+                  description: The external id clients and widgets identify the match by.
+                  properties:
+                    id:
+                      type: string
+                competition_id:
+                  type: object
+                  description: The competition the match is played in.
+                  properties:
+                    id:
+                      type: string
+                home:
+                  type: object
+                  description: The side playing at home.
+                  properties:
+                    name:
+                      type: string
+                away:
+                  type: object
+                  description: The side playing away.
+                  properties:
+                    name:
+                      type: string
+      examples:
+      - name: Snapshot
+        payload:
+          entries:
+          - match_id:
+              id: match-123
+            competition_id:
+              id: competition-7
+            home:
+              name: Northside FC
+            away:
+              name: Riverside United
+    MatchDictionaryEntry:
+      name: MatchDictionaryEntry
+      title: Entry added
+      summary: The entry for a match Kairos started following.
+      payload:
+        type: object
+        description: |-
+          What a match is displayed as, under the id every other message identifies the match by. Everything here is fixed when the match is created and nothing later changes it, so an entry is sent once and removed once.
+
+          The two sides are sent separately rather than as a single combined name, because a combined name cannot be split apart again.
+        properties:
+          match_id:
+            type: object
+            description: The external id clients and widgets identify the match by.
+            properties:
+              id:
+                type: string
+          competition_id:
+            type: object
+            description: The competition the match is played in.
+            properties:
+              id:
+                type: string
+          home:
+            type: object
+            description: The side playing at home.
+            properties:
+              name:
+                type: string
+          away:
+            type: object
+            description: The side playing away.
+            properties:
+              name:
+                type: string
+      examples:
+      - name: Added
+        payload:
+          match_id:
+            id: match-123
+          competition_id:
+            id: competition-7
+          home:
+            name: Northside FC
+          away:
+            name: Riverside United
+    MatchDictionaryEntryRemoved:
+      name: MatchDictionaryEntryRemoved
+      title: Entry removed
+      summary: 'The id of an entry that was removed. TODO: the .proto files define no envelope that tells this apart from
+        the other messages on the stream.'
+      payload:
+        type: object
+        properties:
+          id:
+            type: string
+      examples:
+      - name: Removed
+        payload:
+          id: match-123

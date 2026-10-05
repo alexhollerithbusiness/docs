@@ -19,9 +19,24 @@
       },
       {
         "group": "API reference",
-        "asyncapi": {
-          "source": "/asyncapi.json"
-        }
+        "pages": [
+          {
+            "group": "Odds",
+            "asyncapi": "/asyncapi/odds.asyncapi.yaml"
+          },
+          {
+            "group": "Available matches",
+            "asyncapi": "/asyncapi/available-matches.asyncapi.yaml"
+          },
+          {
+            "group": "Match dictionary",
+            "asyncapi": "/asyncapi/match-dictionary.asyncapi.yaml"
+          },
+          {
+            "group": "Commands",
+            "asyncapi": "/asyncapi/commands.asyncapi.yaml"
+          }
+        ]
       }
     ],
     "global": {
@@ -80,6 +95,12 @@
     "playground": {
       "display": "none",
       "proxy": false
-    }
+    },
+    "asyncapi": [
+      "commands.asyncapi.yaml",
+      "match-dictionary.asyncapi.yaml",
+      "available-matches.asyncapi.yaml",
+      "odds.asyncapi.yaml"
+    ]
   }
 }

@@ -1,0 +1,510 @@
+asyncapi: 3.0.0
+info:
+  title: Kairos Commands
+  version: 1.0.0
+  description: |-
+    Commands that create bets and create or update matches. Every command is answered exactly once; a failure arrives in place of the event a success would have produced.
+
+    TODO: the .proto files define no success events yet, so only failures are documented.
+
+    Generated from the `com.jacktime.strykr` .proto files by `generate_asyncapi.py`; edit the .proto files or the script rather than this file.
+defaultContentType: application/json
+servers:
+  production:
+    host: api.example.com
+    protocol: wss
+    description: 'TODO: replace the placeholder host with the real Kairos WebSocket endpoint.'
+channels:
+  betCommands:
+    address: /commands/bets
+    title: Bet commands
+    description: Send a `BetCommandMessage`; a rejected command is answered with a `CommandFailure`.
+    tags:
+    - name: Bet commands
+    messages:
+      betCommandMessage:
+        $ref: '#/components/messages/BetCommandMessage'
+      betCommandFailure:
+        $ref: '#/components/messages/BetCommandFailure'
+  matchCommands:
+    address: /commands/matches
+    title: Match commands
+    description: Send a `MatchCommandMessage`; a rejected command is answered with a `CommandFailure`.
+    tags:
+    - name: Match commands
+    messages:
+      matchCommandMessage:
+        $ref: '#/components/messages/MatchCommandMessage'
+      matchCommandFailure:
+        $ref: '#/components/messages/MatchCommandFailure'
+operations:
+  receiveBetCommands:
+    action: receive
+    summary: Messages a client sends on bet commands.
+    channel:
+      $ref: '#/channels/betCommands'
+    messages:
+    - $ref: '#/channels/betCommands/messages/betCommandMessage'
+  sendBetCommands:
+    action: send
+    summary: Messages Kairos sends on bet commands.
+    channel:
+      $ref: '#/channels/betCommands'
+    messages:
+    - $ref: '#/channels/betCommands/messages/betCommandFailure'
+  receiveMatchCommands:
+    action: receive
+    summary: Messages a client sends on match commands.
+    channel:
+      $ref: '#/channels/matchCommands'
+    messages:
+    - $ref: '#/channels/matchCommands/messages/matchCommandMessage'
+  sendMatchCommands:
+    action: send
+    summary: Messages Kairos sends on match commands.
+    channel:
+      $ref: '#/channels/matchCommands'
+    messages:
+    - $ref: '#/channels/matchCommands/messages/matchCommandFailure'
+components:
+  messages:
+    BetCommandMessage:
+      name: BetCommandMessage
+      title: Bet command
+      summary: A command about one bet, named by its ids.
+      payload:
+        type: object
+        properties:
+          player_bet_id:
+            type: object
+            description: The two ids a bet is named by. A bet with no player id is anonymous.
+            properties:
+              player_id:
+                type: object
+                properties:
+                  id:
+                    type: string
+              bet_id:
+                type: object
+                properties:
+                  id:
+                    type: string
+          command:
+            type: object
+            properties:
+              create_bet:
+                type: object
+                properties:
+                  bet_ticket:
+                    type: object
+                    description: A bet slip with the ticket id and the moment of placement the client's backend gave it.
+                    properties:
+                      ticket_id:
+                        type: object
+                        description: The id the player is shown their ticket under, which the client's backend assigns and
+                          holds the ticket by. It is not the id Kairos holds the bet under, though the same value may be used
+                          for both.
+                        properties:
+                          id:
+                            type: string
+                      bet_slip:
+                        type: object
+                        description: An offer the player took, together with what they staked on it.
+                        properties:
+                          bet_offer:
+                            type: object
+                            properties:
+                              bet_card:
+                                type: object
+                                properties:
+                                  match_selections:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        match_id:
+                                          type: object
+                                          properties:
+                                            id:
+                                              type: string
+                                        current_match_score:
+                                          type: object
+                                          properties:
+                                            home:
+                                              type: integer
+                                              description: Omitted when it is 0.
+                                              format: uint32
+                                              minimum: 0
+                                              default: 0
+                                            away:
+                                              type: integer
+                                              description: Omitted when it is 0.
+                                              format: uint32
+                                              minimum: 0
+                                              default: 0
+                                  bet_win_terms:
+                                    type: object
+                                    description: What has to happen for a bet to win, which is a rise in score inside a stretch
+                                      of time.
+                                    properties:
+                                      score_change:
+                                        type: integer
+                                        description: How many goals the score has to rise by, counted from the score the card
+                                          was built against.
+                                        format: uint32
+                                        minimum: 0
+                                      bet_duration:
+                                        type: object
+                                        description: How long the rise has to happen in.
+                                        properties:
+                                          minutes:
+                                            type: integer
+                                            format: uint32
+                                            minimum: 0
+                              odds:
+                                type: object
+                                properties:
+                                  decimal_odds:
+                                    type: object
+                                    description: An exact decimal value, written as a string so that it reads the same in
+                                      every locale. The decimal separator is a full stop and there are no thousands separators.
+                                      The scale is in the string itself, so "10.50", "0.00100000" and "6.1" each carry their
+                                      own.
+                                    properties:
+                                      value:
+                                        type: string
+                          stake:
+                            type: object
+                            properties:
+                              amount:
+                                type: object
+                                description: An exact decimal value, written as a string so that it reads the same in every
+                                  locale. The decimal separator is a full stop and there are no thousands separators. The
+                                  scale is in the string itself, so "10.50", "0.00100000" and "6.1" each carry their own.
+                                properties:
+                                  value:
+                                    type: string
+                      placement_timestamp:
+                        type: object
+                        description: When the bet was placed, taken from the client backend's own clock rather than the player's
+                          browser.
+                        properties:
+                          epoch_millis:
+                            type: string
+                            description: A 64-bit integer, written as a decimal string.
+                            format: uint64
+                            pattern: ^[0-9]+$
+                  signature:
+                    type: object
+                    properties:
+                      key_id:
+                        type: string
+                      signature:
+                        type: string
+            required:
+            - create_bet
+      examples:
+      - name: Create a bet
+        payload:
+          player_bet_id:
+            player_id:
+              id: player-42
+            bet_id:
+              id: bet-9001
+          command:
+            create_bet:
+              bet_ticket:
+                ticket_id:
+                  id: ticket-555
+                bet_slip:
+                  bet_offer:
+                    bet_card:
+                      match_selections:
+                      - match_id:
+                          id: match-123
+                        current_match_score:
+                          home: 1
+                          away: 0
+                      bet_win_terms:
+                        score_change: 1
+                        bet_duration:
+                          minutes: 10
+                    odds:
+                      decimal_odds:
+                        value: '4.50'
+                  stake:
+                    amount:
+                      value: '10.00'
+                placement_timestamp:
+                  epoch_millis: '1791199200000'
+              signature:
+                key_id: key-2026-10
+                signature: MEUCIQDx4mVq1t0...base64...
+    BetCommandFailure:
+      name: BetCommandFailure
+      title: Command failure
+      summary: Why the command was rejected.
+      payload:
+        type: object
+        description: |-
+          Why a command was rejected. Every command is answered exactly once, whether it succeeded or failed, so a failure arrives in place of the event a success would have produced.
+
+          The code sits in a message of its own rather than on the event, so that a code which needs more said about it has somewhere to say it. Nothing needs that yet.
+        properties:
+          code:
+            type: string
+            description: |-
+              Why the command was rejected.
+
+              - `UNMAPPED`: A code this library does not know, sent by a newer version of the service. It is never sent deliberately: treat it as an unclassified failure, and upgrade to be able to interpret it.
+              - `SYSTEM_ERROR`: The command could not be processed. No further detail is available.
+              - `MATCH_ALREADY_EXISTS`: A match was to be created under an id that is already held by another match. Nothing was created, and the match already under that id is untouched.
+              - `MATCH_DOES_NOT_EXIST`: A command named a match that is not held. Nothing was changed. Every command other than create acts on a match that already exists, so this answers any of them.
+            enum:
+            - UNMAPPED
+            - SYSTEM_ERROR
+            - MATCH_ALREADY_EXISTS
+            - MATCH_DOES_NOT_EXIST
+      examples:
+      - name: Rejected
+        payload:
+          code: SYSTEM_ERROR
+    MatchCommandMessage:
+      name: MatchCommandMessage
+      title: Match command
+      summary: A command about one match, named by its id.
+      payload:
+        type: object
+        properties:
+          match_id:
+            type: object
+            properties:
+              id:
+                type: string
+          command:
+            type: object
+            properties:
+              create_match:
+                type: object
+                properties:
+                  competition_id:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                  home:
+                    type: object
+                    description: One of the two sides of a match. A message of its own rather than a bare name, so what a
+                      feed carries beyond the name - an abbreviation, the feed's own id, a country - can be added later without
+                      changing anything that holds a competitor. Competitor rather than team because a match is not always
+                      played by teams, and because a match already belongs to a competition.
+                    properties:
+                      name:
+                        type: string
+                  away:
+                    type: object
+                    description: One of the two sides of a match. A message of its own rather than a bare name, so what a
+                      feed carries beyond the name - an abbreviation, the feed's own id, a country - can be added later without
+                      changing anything that holds a competitor. Competitor rather than team because a match is not always
+                      played by teams, and because a match already belongs to a competition.
+                    properties:
+                      name:
+                        type: string
+                description: Exactly one of `create_match`, `update_match` is set.
+              update_match:
+                type: object
+                description: One update to a match, carrying the moment it describes and whatever it reports about that moment.
+                  Every part but the timestamp may be absent, and any combination of them may be present, since a provider
+                  observing a status and a score at one moment reports both. Sending those as two updates sharing one timestamp
+                  would leave the order they are read in to the transport, and where a goal is placed in time depends on that
+                  order. Exactly one of `create_match`, `update_match` is set.
+                properties:
+                  update_timestamp:
+                    type: object
+                    properties:
+                      epoch_millis:
+                        type: string
+                        description: A 64-bit integer, written as a decimal string.
+                        format: uint64
+                        pattern: ^[0-9]+$
+                  price_update:
+                    type: object
+                    properties:
+                      prices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            line:
+                              type: number
+                              format: double
+                            price:
+                              type: object
+                              properties:
+                                under_probability:
+                                  type: number
+                                  format: double
+                                  description: Exactly one of `under_probability`, `over_under_odds` is set.
+                                over_under_odds:
+                                  type: object
+                                  properties:
+                                    over:
+                                      type: number
+                                      format: double
+                                    under:
+                                      type: number
+                                      format: double
+                                  description: Exactly one of `under_probability`, `over_under_odds` is set.
+                              minProperties: 1
+                              maxProperties: 1
+                  score_update:
+                    type: object
+                    properties:
+                      score:
+                        type: object
+                        properties:
+                          home:
+                            type: integer
+                            description: Omitted when it is 0.
+                            format: uint32
+                            minimum: 0
+                            default: 0
+                          away:
+                            type: integer
+                            description: Omitted when it is 0.
+                            format: uint32
+                            minimum: 0
+                            default: 0
+                  match_clock:
+                    type: object
+                    description: |-
+                      The match clock an update reports, which is the playing time of the moment the update describes. It is counted from the start of the match rather than from the start of the period, so a minute into football's second half reads 46 minutes and 0 seconds, and added time is counted into it rather than reported apart from it. A feed whose clock restarts at every period, or that reports the time remaining rather than the time played, is converted before it is sent.
+
+                      The clock is optional on an update. When it is present it is what pins the timing of the match down, since it states the playing time of the event itself and therefore carries none of the delay that a timestamp picks up on its way here.
+
+                      Minutes and seconds are separate values because that is how a feed prints the clock, and a pair of numbers has one reading at any value, where a single formatted one would need a format contract and an answer for a value that does not follow it.
+                    properties:
+                      minutes:
+                        type: integer
+                        format: uint32
+                        minimum: 0
+                      seconds:
+                        type: integer
+                        format: uint32
+                        minimum: 0
+                  match_status_update:
+                    type: object
+                    properties:
+                      match_status:
+                        type: object
+                        properties:
+                          in_period:
+                            type: object
+                            properties:
+                              period:
+                                type: integer
+                                format: uint32
+                                minimum: 0
+                            description: Exactly one of `in_period`, `in_break`, `in_ot_period`, `in_shootout`, `suspended`,
+                              `ended`, `abandoned` is set.
+                          in_break:
+                            type: object
+                            description: 'Carries no fields: an empty object `{}` means InBreak. Exactly one of `in_period`,
+                              `in_break`, `in_ot_period`, `in_shootout`, `suspended`, `ended`, `abandoned` is set.'
+                          in_ot_period:
+                            type: object
+                            properties:
+                              period:
+                                type: integer
+                                format: uint32
+                                minimum: 0
+                            description: Exactly one of `in_period`, `in_break`, `in_ot_period`, `in_shootout`, `suspended`,
+                              `ended`, `abandoned` is set.
+                          in_shootout:
+                            type: object
+                            description: 'Carries no fields: an empty object `{}` means InShootout. Exactly one of `in_period`,
+                              `in_break`, `in_ot_period`, `in_shootout`, `suspended`, `ended`, `abandoned` is set.'
+                          suspended:
+                            type: object
+                            description: 'Carries no fields: an empty object `{}` means Suspended. Exactly one of `in_period`,
+                              `in_break`, `in_ot_period`, `in_shootout`, `suspended`, `ended`, `abandoned` is set.'
+                          ended:
+                            type: object
+                            description: 'Carries no fields: an empty object `{}` means Ended. Exactly one of `in_period`,
+                              `in_break`, `in_ot_period`, `in_shootout`, `suspended`, `ended`, `abandoned` is set.'
+                          abandoned:
+                            type: object
+                            description: 'Carries no fields: an empty object `{}` means Abandoned. Exactly one of `in_period`,
+                              `in_break`, `in_ot_period`, `in_shootout`, `suspended`, `ended`, `abandoned` is set.'
+                        minProperties: 1
+                        maxProperties: 1
+            minProperties: 1
+            maxProperties: 1
+      examples:
+      - name: Create a match
+        payload:
+          match_id:
+            id: match-123
+          command:
+            create_match:
+              competition_id:
+                id: competition-7
+              home:
+                name: Northside FC
+              away:
+                name: Riverside United
+      - name: Update a match
+        payload:
+          match_id:
+            id: match-123
+          command:
+            update_match:
+              update_timestamp:
+                epoch_millis: '1791199500000'
+              score_update:
+                score:
+                  home: 2
+                  away: 0
+              match_clock:
+                minutes: 63
+                seconds: 12
+              price_update:
+                prices:
+                - line: 2.5
+                  price:
+                    over_under_odds:
+                      over: 1.85
+                      under: 1.95
+              match_status_update:
+                match_status:
+                  in_period:
+                    period: 2
+    MatchCommandFailure:
+      name: MatchCommandFailure
+      title: Command failure
+      summary: Why the command was rejected.
+      payload:
+        type: object
+        description: |-
+          Why a command was rejected. Every command is answered exactly once, whether it succeeded or failed, so a failure arrives in place of the event a success would have produced.
+
+          The code sits in a message of its own rather than on the event, so that a code which needs more said about it has somewhere to say it. Nothing needs that yet.
+        properties:
+          code:
+            type: string
+            description: |-
+              Why the command was rejected.
+
+              - `UNMAPPED`: A code this library does not know, sent by a newer version of the service. It is never sent deliberately: treat it as an unclassified failure, and upgrade to be able to interpret it.
+              - `SYSTEM_ERROR`: The command could not be processed. No further detail is available.
+              - `MATCH_ALREADY_EXISTS`: A match was to be created under an id that is already held by another match. Nothing was created, and the match already under that id is untouched.
+              - `MATCH_DOES_NOT_EXIST`: A command named a match that is not held. Nothing was changed. Every command other than create acts on a match that already exists, so this answers any of them.
+            enum:
+            - UNMAPPED
+            - SYSTEM_ERROR
+            - MATCH_ALREADY_EXISTS
+            - MATCH_DOES_NOT_EXIST
+      examples:
+      - name: Match unknown
+        payload:
+          code: MATCH_DOES_NOT_EXIST
