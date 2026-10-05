@@ -19,7 +19,9 @@
       },
       {
         "group": "API reference",
-        "pages": []
+        "asyncapi": {
+          "source": "/asyncapi.yaml"
+        }
       }
     ],
     "global": {
