@@ -77,6 +77,6 @@
   },
   "description": "STRYKA-TEST. Description for SEO and AEO.",
   "api": {
-    "asyncapi": "asyncapi.yaml"
+    "asyncapi": "asyncapi.json"
   }
 }
