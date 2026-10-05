@@ -16,12 +16,6 @@
           "index",
           "quickstart"
         ]
-      },
-      {
-        "group": "API",
-        "pages": [
-          "untitled-page"
-        ]
       }
     ],
     "global": {
