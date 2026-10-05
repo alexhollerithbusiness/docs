@@ -20,7 +20,7 @@
       {
         "group": "API reference",
         "asyncapi": {
-          "source": "/asyncapi.yaml"
+          "source": "/asyncapi.json"
         }
       }
     ],
