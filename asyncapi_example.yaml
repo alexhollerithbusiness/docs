@@ -1,0 +1,70 @@
+asyncapi: 3.1.0
+
+info:
+  title: Hello World Application
+  version: 1.0.0
+  description: |
+    A minimal example application that sends and receives "hello" greetings
+    over a message broker.
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+defaultContentType: application/json
+
+servers:
+  development:
+    host: localhost:1883
+    protocol: mqtt
+    description: Local MQTT broker for development.
+
+channels:
+  hello:
+    address: hello
+    description: Channel where greetings are published.
+    messages:
+      helloMessage:
+        $ref: '#/components/messages/HelloMessage'
+
+operations:
+  sendHello:
+    action: send
+    summary: Publish a greeting.
+    channel:
+      $ref: '#/channels/hello'
+    messages:
+      - $ref: '#/channels/hello/messages/helloMessage'
+
+  receiveHello:
+    action: receive
+    summary: Receive greetings.
+    channel:
+      $ref: '#/channels/hello'
+    messages:
+      - $ref: '#/channels/hello/messages/helloMessage'
+
+components:
+  messages:
+    HelloMessage:
+      name: HelloMessage
+      title: Hello message
+      summary: A simple greeting.
+      payload:
+        $ref: '#/components/schemas/Hello'
+
+  schemas:
+    Hello:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: The greeting text.
+          examples:
+            - Hello, World!
+        sentAt:
+          type: string
+          format: date-time
+          description: When the greeting was sent.
+
