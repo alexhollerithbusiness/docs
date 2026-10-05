@@ -16,6 +16,10 @@
           "index",
           "quickstart"
         ]
+      },
+      {
+        "group": "API reference",
+        "pages": []
       }
     ],
     "global": {
@@ -71,6 +75,9 @@
   },
   "description": "STRYKA-TEST. Description for SEO and AEO.",
   "api": {
-    "asyncapi": "asyncapi.json"
+    "playground": {
+      "display": "none",
+      "proxy": false
+    }
   }
 }
